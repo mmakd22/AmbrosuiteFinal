@@ -1,132 +1,74 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
-import { setToken } from '../utils/auth';
+import { View, TextInput, Button, StyleSheet, Text, Alert } from 'react-native';
 import { API_BASE_URL } from '../utils/config';
+import { setToken } from '../utils/auth';
 
 type Props = {
-  navigation: any;
   setIsAuthenticated: (auth: boolean) => void;
 };
 
 const LoginScreen = ({ setIsAuthenticated }: Props) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [errorMessage, setErrorMessage] = useState('');
+  const [error, setError] = useState('');
 
   const handleLogin = async () => {
-    setErrorMessage(''); // limpia errores anteriores
+    setError('');
     try {
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
-      if (!response.ok) {
-        setErrorMessage(data.message || 'Credenciales inválidas');
+      if (!res.ok) {
+        setError('Credenciales inválidas');
         return;
       }
 
+      const data = await res.json();
       await setToken(data.token);
       setIsAuthenticated(true);
-    } catch (error: any) {
-      setErrorMessage('Error de conexión o inesperado');
-      console.log(error);
+    } catch (err) {
+      console.error(err);
+      setError('Error de red o del servidor');
     }
   };
 
   return (
     <View style={styles.container}>
-      <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
-
-      <Text style={styles.title}>Ambrosuite</Text>
-
+      <Text style={styles.title}>Iniciar sesión</Text>
       <TextInput
         placeholder="Email"
-        placeholderTextColor="#999"
         style={styles.input}
-        value={email}
-        onChangeText={(text) => {
-          setEmail(text);
-          setErrorMessage('');
-        }}
-        keyboardType="email-address"
         autoCapitalize="none"
+        value={email}
+        onChangeText={setEmail}
       />
-
       <TextInput
         placeholder="Contraseña"
-        placeholderTextColor="#999"
+        secureTextEntry
         style={styles.input}
         value={password}
-        onChangeText={(text) => {
-          setPassword(text);
-          setErrorMessage('');
-        }}
-        secureTextEntry
+        onChangeText={setPassword}
       />
-
-      <TouchableOpacity onPress={handleLogin} style={styles.button}>
-        <Text style={styles.buttonText}>Iniciar sesión</Text>
-      </TouchableOpacity>
-
-      {errorMessage !== '' && <Text style={styles.errorText}>{errorMessage}</Text>}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
+      <Button title="Iniciar sesión" onPress={handleLogin} />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    paddingHorizontal: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  logo: {
-    width: 120,
-    height: 120,
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#800020',
-    marginBottom: 24,
-    fontFamily: 'Roboto',
-  },
+  container: { flex: 1, justifyContent: 'center', padding: 16 },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
   input: {
-    width: '100%',
-    backgroundColor: '#f5f5f5',
+    borderWidth: 1,
+    borderColor: '#ccc',
     borderRadius: 8,
-    padding: 14,
-    marginBottom: 16,
-    fontSize: 16,
-    color: '#333',
-    fontFamily: 'Roboto',
+    marginBottom: 12,
+    padding: 10,
   },
-  button: {
-    width: '100%',
-    backgroundColor: '#800020',
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  buttonText: {
-    color: '#ffffff',
-    fontWeight: 'bold',
-    fontSize: 16,
-    fontFamily: 'Roboto',
-  },
-  errorText: {
-    color: '#800020',
-    marginTop: 12,
-    fontSize: 14,
-    fontFamily: 'Roboto',
-    textAlign: 'center',
-  },
+  error: { color: 'red', marginBottom: 10, textAlign: 'center' },
 });
 
 export default LoginScreen;

@@ -3,8 +3,6 @@ import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { getToken } from './src/utils/auth';
 
-
-
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
@@ -16,11 +14,14 @@ export default function App() {
     checkAuth();
   }, []);
 
-  if (isAuthenticated === null) return null; // podés poner un splash screen si querés
+  if (isAuthenticated === null) return null; // Evita renderizar antes de saber el auth
 
   return (
     <NavigationContainer>
-      <AppNavigator isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />
+      <AppNavigator
+        isAuthenticated={isAuthenticated}
+        setIsAuthenticated={setIsAuthenticated}
+      />
     </NavigationContainer>
   );
 }

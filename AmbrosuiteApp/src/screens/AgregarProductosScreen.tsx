@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { API_BASE_URL } from '../utils/config';
-import type { RootStackParamList } from '../navigation/AppNavigator';
+import { RootStackParamList } from '../navigation/AppNavigator';
 
 type Producto = {
   id: number;
@@ -65,21 +65,39 @@ const AgregarProductosScreen = () => {
         productoFinalId: Number(productoFinalId),
         cantidad,
       }));
-
+  
+    console.log('🟡 Detalles a enviar:', detalles);
+  
     try {
       for (const detalle of detalles) {
-        await fetch(`${API_BASE_URL}/api/PedidoDetalles`, {
+        console.log('📤 Enviando detalle:', detalle);
+  
+        const res = await fetch(`${API_BASE_URL}/api/PedidoDetalles`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(detalle),
         });
+  
+        const data = await res.json();
+        console.log('✅ Respuesta del servidor:', res.status, data);
       }
-
+  
+      console.log('⚙️ Actualizando estado del pedido a 1...');
+      const resEstado = await fetch(`${API_BASE_URL}/api/Pedidos/${pedidoId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: 1 }),
+      });
+  
+      const dataEstado = await resEstado.json();
+      console.log('📘 Respuesta de PUT estado:', resEstado.status, dataEstado);
+  
       navigation.goBack();
     } catch (error) {
-      console.error('Error al agregar productos:', error);
+      console.error('❌ Error al confirmar productos:', error);
     }
   };
+  
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
