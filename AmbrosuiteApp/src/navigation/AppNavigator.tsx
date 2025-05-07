@@ -14,11 +14,11 @@ type Props = {
 };
 
 export type RootStackParamList = {
-  Home: undefined;
-  Pedido: { pedidoId: number };
-  AgregarProductos: { pedidoId: number };
-  Login: undefined;
-};
+    Home: undefined;
+    Login: undefined;
+    Pedido: { pedidoId: number };
+    AgregarProductos: { pedidoId: number };
+  };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
