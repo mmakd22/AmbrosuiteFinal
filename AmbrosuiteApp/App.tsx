@@ -1,0 +1,26 @@
+import React, { useEffect, useState } from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import AppNavigator from './src/navigation/AppNavigator';
+import { getToken } from './src/utils/auth';
+
+
+
+export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = await getToken();
+      setIsAuthenticated(!!token);
+    };
+    checkAuth();
+  }, []);
+
+  if (isAuthenticated === null) return null; // podés poner un splash screen si querés
+
+  return (
+    <NavigationContainer>
+      <AppNavigator isAuthenticated={isAuthenticated} setIsAuthenticated={setIsAuthenticated} />
+    </NavigationContainer>
+  );
+}
