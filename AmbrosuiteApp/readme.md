@@ -15,3 +15,24 @@ npm i
 
 npx expo start
 
+w
+
+
+**Versión Mobile**
+
+Instalar ngrok y crearse cuenta
+
+Hacer login en ngrok creo
+
+abrir ngrok
+
+ngrok http https://localhost:5001
+
+La url que te da la pegás en src/utils/config.ts
+
+Abrir consola en la carpeta AmbrosuiteAPP y tirar estos comandos
+
+npm i
+
+npx expo start --tunnel
+
