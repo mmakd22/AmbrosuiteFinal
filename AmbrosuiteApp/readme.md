@@ -15,6 +15,8 @@ npm i
 
 npx expo start
 
+En src/utils/config.ts agregar de url https://localhost:5001
+
 w
 
 
