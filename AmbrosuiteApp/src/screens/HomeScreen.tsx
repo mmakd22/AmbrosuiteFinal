@@ -1,74 +1,218 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import React, { useState, useCallback, useEffect } from 'react';
+import {
+    View,
+    Text,
+    FlatList,
+    TouchableOpacity,
+    Modal,
+    StyleSheet,
+    RefreshControl,
+    Alert,
+} from 'react-native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { API_BASE_URL } from '../utils/config';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { API_BASE_URL } from '../utils/config';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
-type Pedido = {
-  id: number;
-  estado: number;
-};
+type Pedido = { id: number; estado: number };
+type Mesa = { id: number; estado: number };
 
-const estados: { [key: number]: string } = {
-  0: 'Activo',
-  1: 'Entregado',
-};
+export default function HomeScreen() {
+    const navigation = useNavigation<NavigationProp>();
+    const [pedidos, setPedidos] = useState<Pedido[]>([]);
+    const [modalVisible, setModalVisible] = useState(false);
+    const [mesasDisponibles, setMesasDisponibles] = useState<Mesa[]>([]);
+    const [refreshing, setRefreshing] = useState(false);
 
-const HomeScreen = () => {
-  const navigation = useNavigation<NavigationProp>();
-  const [pedidos, setPedidos] = useState<Pedido[]>([]);
+    const fetchPedidos = async () => {
+        try {
+            const response = await fetch(`${API_BASE_URL}/api/Pedidos`);
+            const data = await response.json();
+            const activos = data.filter((p: Pedido) => p.estado === 0 || p.estado === 1);
+            setPedidos(activos);
+        } catch (error) {
+            console.error('Error al cargar pedidos:', error);
+        }
+    };
 
-  useEffect(() => {
-    fetchPedidos();
-  }, []);
+    useFocusEffect(useCallback(() => { fetchPedidos(); }, []));
+    useEffect(() => {
+        const interval = setInterval(fetchPedidos, 60000);
+        return () => clearInterval(interval);
+    }, []);
 
-  const fetchPedidos = async () => {
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/Pedidos`);
-      const data = await response.json();
-      const activos = data.filter((p: Pedido) => p.estado === 0 || p.estado === 1);
-      setPedidos(activos);
-    } catch (error) {
-      console.error('Error al cargar pedidos:', error);
-    }
-  };
+    const onRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await fetchPedidos();
+        setRefreshing(false);
+    }, []);
 
-  const renderItem = ({ item }: { item: Pedido }) => (
-    <TouchableOpacity
-      style={styles.pedidoCard}
-      onPress={() => navigation.navigate('Pedido', { pedidoId: item.id })}
-    >
-      <Text style={styles.pedidoText}>Pedido #{item.id}</Text>
-      <Text style={styles.estado}>{estados[item.estado] || 'Desconocido'}</Text>
-    </TouchableOpacity>
-  );
+    const abrirModalSeleccionMesa = async () => {
+        try {
+            const res = await fetch(`${API_BASE_URL}/api/Mesas`);
+            const data = await res.json();
+            const disponibles = data.filter((m: Mesa) => m.estado === 0 || m.estado === 1);
+            setMesasDisponibles(disponibles);
+            setModalVisible(true);
+        } catch (err) {
+            console.error('Error al cargar mesas:', err);
+        }
+    };
 
-  return (
-    <View style={styles.container}>
-      <FlatList
-        data={pedidos}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderItem}
-        ListEmptyComponent={<Text style={styles.empty}>No hay pedidos activos.</Text>}
-      />
-    </View>
-  );
-};
+    const obtenerNuevoPedidoId = async (): Promise<number> => {
+        const res = await fetch(`${API_BASE_URL}/api/Pedidos`);
+        const pedidos = await res.json();
+        const ultimo = pedidos.sort((a, b) => b.id - a.id)[0];
+        return ultimo ? ultimo.id + 1 : 1;
+      };
 
-export default HomeScreen;
+    const crearPedido = async (mesaId: number) => {
+        try {
+          const nuevoId = await obtenerNuevoPedidoId();
+      
+          // Paso 1: crear el pedido sin mesa asignada
+          await fetch(`${API_BASE_URL}/api/Pedidos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: nuevoId,
+              estado: 0,
+              usuario_id: 0,
+              mesa_id: null,
+            }),
+          });
+      
+          // Paso 2: crear detalle vacío
+          await fetch(`${API_BASE_URL}/api/PedidoDetalles`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify([
+              {
+                pedido_id: nuevoId,
+                producto_id: 0,
+                cantidad: 0,
+              },
+            ]),
+          });
+      
+          // Paso 3: actualizar el pedido y asignar la mesa
+          await fetch(`${API_BASE_URL}/api/Pedidos/${nuevoId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: nuevoId,
+              mesa_id: mesaId,
+              estado: 0,
+              usuario_id: 0,
+            }),
+          });
+      
+          setModalVisible(false);
+          navigation.navigate('AgregarProductos', { pedidoId: nuevoId });
+        } catch (err) {
+          console.error('Error al crear pedido completo:', err);
+          Alert.alert('Error', 'No se pudo crear el pedido.');
+          setModalVisible(false);
+        }
+      };
+
+
+    return (
+        <View style={styles.container}>
+            <Text style={styles.title}>Pedidos Activos</Text>
+
+            <TouchableOpacity style={styles.boton} onPress={abrirModalSeleccionMesa}>
+                <Text style={styles.botonTexto}>Agregar Pedido</Text>
+            </TouchableOpacity>
+
+            <FlatList
+                data={pedidos}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                    <TouchableOpacity
+                        style={styles.pedidoCard}
+                        onPress={() => navigation.navigate('Pedido', { pedidoId: item.id })}
+                    >
+                        <Text style={styles.pedidoText}>Pedido #{item.id}</Text>
+                        <Text style={styles.estado}>
+                            Estado: {item.estado === 0 ? 'Activo' : 'Entregado'}
+                        </Text>
+                    </TouchableOpacity>
+                )}
+                ListEmptyComponent={<Text>No hay pedidos activos.</Text>}
+            />
+
+            <Modal visible={modalVisible} transparent animationType="slide">
+                <View style={styles.modalContainer}>
+                    <View style={styles.modalContent}>
+                        <Text style={styles.modalTitle}>Seleccioná una mesa</Text>
+                        <FlatList
+                            data={mesasDisponibles}
+                            keyExtractor={(item) => item.id.toString()}
+                            renderItem={({ item }) => (
+                                <TouchableOpacity
+                                    style={styles.mesaCard}
+                                    onPress={() => crearPedido(item.id)}
+                                >
+                                    <Text>Mesa #{item.id}</Text>
+                                </TouchableOpacity>
+                            )}
+                        />
+                        <TouchableOpacity onPress={() => setModalVisible(false)}>
+                            <Text style={{ marginTop: 10, color: 'red', textAlign: 'center' }}>Cancelar</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+        </View>
+    );
+}
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  pedidoCard: {
-    backgroundColor: '#eee',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 10,
-  },
-  pedidoText: { fontSize: 18, fontWeight: 'bold' },
-  estado: { marginTop: 4, color: '#666' },
-  empty: { textAlign: 'center', color: '#888', marginTop: 20 },
+    container: { flex: 1, padding: 20 },
+    title: { fontSize: 24, fontWeight: 'bold', marginBottom: 12 },
+    pedidoCard: {
+        backgroundColor: '#eee',
+        padding: 16,
+        borderRadius: 8,
+        marginBottom: 10,
+    },
+    pedidoText: { fontSize: 18, fontWeight: 'bold' },
+    estado: { marginTop: 4, color: '#666' },
+    boton: {
+        backgroundColor: '#800020',
+        padding: 12,
+        borderRadius: 6,
+        marginBottom: 16,
+    },
+    botonTexto: { color: '#fff', textAlign: 'center', fontSize: 16 },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        backgroundColor: '#fff',
+        padding: 20,
+        borderRadius: 8,
+        width: '80%',
+        maxHeight: '70%',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 12,
+        textAlign: 'center',
+    },
+    mesaCard: {
+        padding: 12,
+        backgroundColor: '#f4f4f4',
+        borderRadius: 6,
+        marginBottom: 10,
+        alignItems: 'center',
+    },
 });

@@ -29,20 +29,21 @@ type PedidoDetalle = {
   cantidad: number;
 };
 
-type RouteParams = {
-  pedidoId: number;
-};
-
 export default function AgregarProductosScreen() {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
-  const { pedidoId } = route.params as RouteParams;
+  const rawParams = route.params as { pedidoId: number | string };
+  const pedidoId = Number(rawParams.pedidoId);
 
   const [productos, setProductos] = useState<Producto[]>([]);
   const [cantidades, setCantidades] = useState<Record<number, number>>({});
   const [detallesExistentes, setDetallesExistentes] = useState<PedidoDetalle[]>([]);
 
   useEffect(() => {
+    if (!pedidoId || isNaN(pedidoId)) {
+      Alert.alert('Error', 'El ID del pedido no es válido.');
+      return;
+    }
     fetchProductos();
     fetchDetalles();
   }, []);
@@ -61,14 +62,20 @@ export default function AgregarProductosScreen() {
     try {
       const res = await fetch(`${API_BASE_URL}/api/PedidoDetalles/pedido/${pedidoId}`);
       const data = await res.json();
-      setDetallesExistentes(data);
 
-      // Seteamos las cantidades existentes
-      const initial: Record<number, number> = {};
+      if (!Array.isArray(data)) {
+        console.warn('Respuesta inesperada de PedidoDetalles:', data);
+        setDetallesExistentes([]);
+        setCantidades({});
+        return;
+      }
+
+      setDetallesExistentes(data);
+      const inicial: Record<number, number> = {};
       data.forEach((d: PedidoDetalle) => {
-        initial[d.producto_id] = d.cantidad;
+        inicial[d.producto_id] = d.cantidad;
       });
-      setCantidades(initial);
+      setCantidades(inicial);
     } catch (error) {
       console.error('Error al obtener detalles existentes:', error);
     }
@@ -80,28 +87,26 @@ export default function AgregarProductosScreen() {
 
     for (const producto of productos) {
       const nuevaCantidad = cantidades[producto.id] || 0;
-      const detalleExistente = detallesExistentes.find(d => d.producto_id === producto.id);
+      const existente = detallesExistentes.find((d) => d.producto_id === producto.id);
 
-      if (detalleExistente) {
+      if (existente) {
         if (nuevaCantidad === 0) {
-          // DELETE
           try {
-            const res = await fetch(`${API_BASE_URL}/api/PedidoDetalles/${detalleExistente.id}`, {
+            const res = await fetch(`${API_BASE_URL}/api/PedidoDetalles/${existente.id}`, {
               method: 'DELETE',
             });
             if (!res.ok) errores++;
           } catch (err) {
-            console.error('Error en DELETE:', err);
             errores++;
+            console.error('Error en DELETE:', err);
           }
         } else {
-          // PUT
           try {
-            const res = await fetch(`${API_BASE_URL}/api/PedidoDetalles/${detalleExistente.id}`, {
+            const res = await fetch(`${API_BASE_URL}/api/PedidoDetalles/${existente.id}`, {
               method: 'PUT',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                id: detalleExistente.id,
+                id: existente.id,
                 pedido_id: pedidoId,
                 producto_id: producto.id,
                 cantidad: nuevaCantidad,
@@ -109,36 +114,33 @@ export default function AgregarProductosScreen() {
             });
             if (!res.ok) errores++;
           } catch (err) {
-            console.error('Error en PUT:', err);
             errores++;
+            console.error('Error en PUT:', err);
           }
         }
-      } else {
-        if (nuevaCantidad > 0) {
-          // POST
-          try {
-            const res = await fetch(`${API_BASE_URL}/api/PedidoDetalles`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                pedido_id: pedidoId,
-                producto_id: producto.id,
-                cantidad: nuevaCantidad,
-              }),
-            });
-            if (!res.ok) errores++;
-          } catch (err) {
-            console.error('Error en POST:', err);
-            errores++;
-          }
+      } else if (nuevaCantidad > 0) {
+        try {
+          const res = await fetch(`${API_BASE_URL}/api/PedidoDetalles`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              pedido_id: pedidoId,
+              producto_id: producto.id,
+              cantidad: nuevaCantidad,
+            }),
+          });
+          if (!res.ok) errores++;
+        } catch (err) {
+          errores++;
+          console.error('Error en POST:', err);
         }
       }
     }
 
     if (errores > 0) {
-      Alert.alert('Atención', 'Hubo errores al actualizar los productos.');
+      Alert.alert('Atención', 'Algunos productos no se pudieron procesar.');
     } else {
-      Alert.alert('Listo', 'Los productos se actualizaron correctamente.', [
+      Alert.alert('Productos actualizados correctamente.', '', [
         {
           text: 'OK',
           onPress: () => navigation.navigate('Pedido', { pedidoId }),
@@ -148,7 +150,7 @@ export default function AgregarProductosScreen() {
   };
 
   const total = Object.entries(cantidades).reduce((sum, [id, cantidad]) => {
-    const producto = productos.find(p => p.id === parseInt(id));
+    const producto = productos.find((p) => p.id === Number(id));
     return sum + (producto ? producto.precio * cantidad : 0);
   }, 0);
 
@@ -168,10 +170,12 @@ export default function AgregarProductosScreen() {
               style={styles.input}
               keyboardType="numeric"
               value={cantidades[item.id]?.toString() || ''}
-              onChangeText={(text) => {
-                const cantidad = parseInt(text) || 0;
-                setCantidades(prev => ({ ...prev, [item.id]: cantidad }));
-              }}
+              onChangeText={(text) =>
+                setCantidades((prev) => ({
+                  ...prev,
+                  [item.id]: parseInt(text) || 0,
+                }))
+              }
             />
           </View>
         )}
