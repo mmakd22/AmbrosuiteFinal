@@ -61,62 +61,44 @@ export default function HomeScreen() {
         }
     };
 
-    const obtenerNuevoPedidoId = async (): Promise<number> => {
-        const res = await fetch(`${API_BASE_URL}/api/Pedidos`);
-        const pedidos = await res.json();
-        const ultimo = pedidos.sort((a, b) => b.id - a.id)[0];
-        return ultimo ? ultimo.id + 1 : 1;
-      };
+    const [isLoading, setIsLoading] = useState(false);
 
     const crearPedido = async (mesaId: number) => {
+        if (isLoading) return;
+        setIsLoading(true);
+
         try {
-          const nuevoId = await obtenerNuevoPedidoId();
-      
-          // Paso 1: crear el pedido sin mesa asignada
-          await fetch(`${API_BASE_URL}/api/Pedidos`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: nuevoId,
-              estado: 0,
-              usuario_id: 0,
-              mesa_id: null,
-            }),
-          });
-      
-          // Paso 2: crear detalle vacío
-          await fetch(`${API_BASE_URL}/api/PedidoDetalles`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify([
-              {
-                pedido_id: nuevoId,
-                producto_id: 0,
-                cantidad: 0,
-              },
-            ]),
-          });
-      
-          // Paso 3: actualizar el pedido y asignar la mesa
-          await fetch(`${API_BASE_URL}/api/Pedidos/${nuevoId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: nuevoId,
-              mesa_id: mesaId,
-              estado: 0,
-              usuario_id: 0,
-            }),
-          });
-      
-          setModalVisible(false);
-          navigation.navigate('AgregarProductos', { pedidoId: nuevoId });
-        } catch (err) {
-          console.error('Error al crear pedido completo:', err);
-          Alert.alert('Error', 'No se pudo crear el pedido.');
-          setModalVisible(false);
+            const response = await fetch(`${API_BASE_URL}/api/Pedidos`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    total: 0,
+                    estado: 0,
+                    mesa_id: mesaId,
+                    usuario_id: 0,
+                }),
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('Error al crear el pedido:', errorText);
+                Alert.alert('Error', 'No se pudo crear el pedido.');
+                return;
+            }
+
+            await fetchPedidos();
+            setModalVisible(false);
+            Alert.alert('Éxito', 'Pedido creado correctamente.');
+        } catch (error) {
+            console.error('Error general al crear pedido:', error);
+            Alert.alert('Error inesperado al crear el pedido.');
+        } finally {
+            setIsLoading(false); // Restaurar el estado al final
         }
-      };
+    };
+
+
+
 
 
     return (
@@ -164,6 +146,8 @@ export default function HomeScreen() {
                         <TouchableOpacity onPress={() => setModalVisible(false)}>
                             <Text style={{ marginTop: 10, color: 'red', textAlign: 'center' }}>Cancelar</Text>
                         </TouchableOpacity>
+
+
                     </View>
                 </View>
             </Modal>

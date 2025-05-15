@@ -70,9 +70,11 @@ export default function AgregarProductosScreen() {
         return;
       }
 
-      setDetallesExistentes(data);
+      const filtrados = data.filter((d) => d.producto_id !== 0);
+      setDetallesExistentes(filtrados);
+
       const inicial: Record<number, number> = {};
-      data.forEach((d: PedidoDetalle) => {
+      filtrados.forEach((d: PedidoDetalle) => {
         inicial[d.producto_id] = d.cantidad;
       });
       setCantidades(inicial);
