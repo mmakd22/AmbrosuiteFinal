@@ -66,7 +66,7 @@ export default function HomeScreen() {
     const crearPedido = async (mesaId: number) => {
         if (isLoading) return;
         setIsLoading(true);
-
+    
         try {
             const response = await fetch(`${API_BASE_URL}/api/Pedidos`, {
                 method: 'POST',
@@ -75,25 +75,31 @@ export default function HomeScreen() {
                     total: 0,
                     estado: 0,
                     mesa_id: mesaId,
-                    usuario_id: 0,
+                    usuario_id: 2,
                 }),
             });
-
+    
             if (!response.ok) {
                 const errorText = await response.text();
                 console.error('Error al crear el pedido:', errorText);
                 Alert.alert('Error', 'No se pudo crear el pedido.');
                 return;
             }
-
-            await fetchPedidos();
+    
+            const data = await response.json();
+            const nuevoPedido = {
+                id: data.id,
+                estado: data.estado,
+            };
+    
+            setPedidos((prev) => [...prev, nuevoPedido]); // Agregamos el nuevo pedido al estado actual
             setModalVisible(false);
-            Alert.alert('Éxito', 'Pedido creado correctamente.');
+            Alert.alert('Éxito', `Pedido #${data.id} creado correctamente.`);
         } catch (error) {
             console.error('Error general al crear pedido:', error);
             Alert.alert('Error inesperado al crear el pedido.');
         } finally {
-            setIsLoading(false); // Restaurar el estado al final
+            setIsLoading(false);
         }
     };
 
