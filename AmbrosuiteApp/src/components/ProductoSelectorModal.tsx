@@ -3,233 +3,140 @@ import {
   Modal,
   View,
   Text,
-  TouchableOpacity,
   FlatList,
+  TouchableOpacity,
   TextInput,
   StyleSheet,
-  ScrollView,
+  Button,
 } from 'react-native';
 import { API_BASE_URL } from '../utils/config';
-
-type Categoria = {
-  id: number;
-  nombre: string;
-};
 
 type Producto = {
   id: number;
   nombre: string;
-  precio: number;
-  categoria: Categoria;
 };
 
 type Props = {
   visible: boolean;
   onClose: () => void;
-  onAdd: (productoId: number, cantidad: number) => void;
+  pedidoId: number;
+  onProductoAgregado: () => void;
 };
 
-const ProductoSelectorModal = ({ visible, onClose, onAdd }: Props) => {
+const ProductoSelectorModal = ({ visible, onClose, pedidoId, onProductoAgregado }: Props) => {
   const [productos, setProductos] = useState<Producto[]>([]);
-  const [categorias, setCategorias] = useState<Categoria[]>([]);
-  const [selectedCategoria, setSelectedCategoria] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-  const [cantidad, setCantidad] = useState<string>('1');
+  const [cantidad, setCantidad] = useState('1');
 
   useEffect(() => {
     if (visible) {
       fetch(`${API_BASE_URL}/api/ProductosFinales`)
         .then((res) => res.json())
-        .then((data: Producto[]) => {
-          setProductos(data);
-
-          // Extraer categorías únicas
-          const categoriasUnicas = Array.from(
-            new Set(data.map((p) => p.categoria.nombre))
-          );
-
-          const categoriasDTO: Categoria[] = categoriasUnicas.map((nombre, index) => ({
-            id: index,
-            nombre,
-          }));
-
-          setCategorias(categoriasDTO);
-          setSelectedCategoria(categoriasDTO[0]?.nombre || null);
-        })
+        .then((data) => setProductos(data))
         .catch((e) => console.error('Error al cargar productos:', e));
     }
   }, [visible]);
 
-  const productosFiltrados = productos.filter(
-    (p) => p.categoria?.nombre === selectedCategoria
-  );
-
-  const handleAgregar = () => {
-    if (selectedId && parseInt(cantidad) > 0) {
-      onAdd(selectedId, parseInt(cantidad));
+  const handleAgregar = async () => {
+    if (!selectedId || !cantidad) return;
+  
+    try {
+      // Buscar si ya existe ese producto en el pedido
+      const resDetalles = await fetch(`${API_BASE_URL}/api/PedidoDetalles/pedido/${pedidoId}`);
+      const detallesExistentes = await resDetalles.json();
+  
+      const existente = detallesExistentes.find(
+        (d: any) => d.productoFinal?.id === selectedId
+      );
+  
+      if (!existente) {
+        console.warn('Este modal está preparado para modificar productos existentes, no para crear nuevos.');
+        return;
+      }
+  
+      const body = {
+        producto_id: selectedId,
+        pedido_id: pedidoId,
+        cantidad: parseInt(cantidad),
+        estado: existente.estado // se mantiene
+      };
+  
+      const response = await fetch(`${API_BASE_URL}/api/PedidoDetalles/${existente.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+  
+      const result = await response.text();
+      console.log('PUT respuesta:', response.status, result);
+  
+      if (!response.ok) {
+        throw new Error(`Error al modificar producto: ${result}`);
+      }
+  
+      onProductoAgregado(); // recarga
+      onClose();
       setSelectedId(null);
       setCantidad('1');
-      onClose();
+    } catch (error) {
+      console.error('Error al agregar producto:', error);
     }
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.overlay}>
-        <View style={styles.container}>
-          <Text style={styles.title}>Seleccioná productos</Text>
+    <Modal visible={visible} animationType="slide">
+      <View style={styles.container}>
+        <Text style={styles.title}>Agregar producto</Text>
 
-          {/* Chips de categorías */}
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipContainer}>
-            {categorias.map((cat) => (
-              <TouchableOpacity
-                key={cat.id}
-                style={[
-                  styles.chip,
-                  selectedCategoria === cat.nombre && styles.chipSelected,
-                ]}
-                onPress={() => setSelectedCategoria(cat.nombre)}
-              >
-                <Text
-                  style={[
-                    styles.chipText,
-                    selectedCategoria === cat.nombre && styles.chipTextSelected,
-                  ]}
-                >
-                  {cat.nombre}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
+        <FlatList
+          data={productos}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[
+                styles.producto,
+                selectedId === item.id && styles.productoSeleccionado,
+              ]}
+              onPress={() => setSelectedId(item.id)}
+            >
+              <Text>{item.nombre}</Text>
+            </TouchableOpacity>
+          )}
+        />
 
-          {/* Listado de productos filtrado */}
-          <FlatList
-            data={productosFiltrados}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={({ item }) => (
-              <TouchableOpacity
-                style={[
-                  styles.productoItem,
-                  selectedId === item.id && styles.productoItemSelected,
-                ]}
-                onPress={() => {
-                  setSelectedId(item.id);
-                  setCantidad('1');
-                }}
-              >
-                <Text style={styles.nombreProducto}>{item.nombre}</Text>
-                <Text style={styles.precio}>${item.precio.toFixed(2)}</Text>
-              </TouchableOpacity>
-            )}
-            style={styles.productList}
-          />
+        <TextInput
+          style={styles.input}
+          keyboardType="numeric"
+          value={cantidad}
+          onChangeText={setCantidad}
+          placeholder="Cantidad"
+        />
 
-          {/* Cantidad */}
-          <TextInput
-            value={cantidad}
-            onChangeText={setCantidad}
-            keyboardType="numeric"
-            placeholder="Cantidad"
-            style={styles.cantidadInput}
-          />
-
-          {/* Botones */}
-          <TouchableOpacity onPress={handleAgregar} style={styles.agregarBtn}>
-            <Text style={styles.agregarTexto}>Confirmar selección</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={onClose} style={styles.cancelarBtn}>
-            <Text style={styles.cancelarTexto}>Cancelar</Text>
-          </TouchableOpacity>
-        </View>
+        <Button title="Agregar al pedido" onPress={handleAgregar} color="#007BFF" />
+        <Button title="Cancelar" onPress={onClose} color="#999" />
       </View>
     </Modal>
   );
 };
 
-export default ProductoSelectorModal;
-
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: '#000000aa',
-    justifyContent: 'center',
-  },
-  container: {
-    margin: 20,
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-    maxHeight: '90%',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  chipContainer: {
-    flexDirection: 'row',
-    marginBottom: 10,
-  },
-  chip: {
-    backgroundColor: '#eee',
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    marginRight: 8,
-  },
-  chipSelected: {
-    backgroundColor: '#800020',
-  },
-  chipText: {
-    color: '#333',
-  },
-  chipTextSelected: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  productList: {
-    maxHeight: 250,
-    marginBottom: 10,
-  },
-  productoItem: {
+  container: { flex: 1, padding: 16 },
+  title: { fontSize: 22, fontWeight: 'bold', marginBottom: 12 },
+  producto: {
     padding: 12,
-    borderRadius: 6,
-    backgroundColor: '#f5f5f5',
-    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
-  productoItemSelected: {
-    backgroundColor: '#ffdede',
+  productoSeleccionado: {
+    backgroundColor: '#d3e5ff',
   },
-  nombreProducto: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  precio: {
-    color: '#555',
-  },
-  cantidadInput: {
-    borderColor: '#ccc',
+  input: {
     borderWidth: 1,
+    borderColor: '#aaa',
+    borderRadius: 8,
     padding: 8,
-    borderRadius: 6,
-    marginBottom: 10,
-  },
-  agregarBtn: {
-    backgroundColor: '#800020',
-    padding: 12,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  agregarTexto: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  cancelarBtn: {
-    marginTop: 10,
-    alignItems: 'center',
-  },
-  cancelarTexto: {
-    color: 'red',
+    marginVertical: 12,
   },
 });
+
+export default ProductoSelectorModal;
