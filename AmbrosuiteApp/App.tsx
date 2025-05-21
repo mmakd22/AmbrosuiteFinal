@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './src/navigation/AppNavigator';
-import { getToken } from './src/utils/auth';
+import { getToken, getRole } from './src/utils/auth';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -9,7 +9,12 @@ export default function App() {
   useEffect(() => {
     const checkAuth = async () => {
       const token = await getToken();
-      setIsAuthenticated(!!token);
+      const rol = await getRole();
+      if (token && (rol === 0 || rol === 1)) {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+      }
     };
     checkAuth();
   }, []);
