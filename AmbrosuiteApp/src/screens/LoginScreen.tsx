@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Text, Alert } from 'react-native';
 import { API_BASE_URL } from '../utils/config';
-import { setToken } from '../utils/auth';
+import { setToken, setRole } from '../utils/auth';
 
 type Props = {
   setIsAuthenticated: (auth: boolean) => void;
@@ -20,15 +20,21 @@ const LoginScreen = ({ setIsAuthenticated }: Props) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-
+  
       if (!res.ok) {
         setError('Credenciales inválidas');
         return;
       }
-
+  
       const data = await res.json();
-      await setToken(data.token);
-      setIsAuthenticated(true);
+  
+      if (data.rol === 4 || data.rol === 1 || data.rol === 0) {
+        await setToken(data.token);
+        await setRole(data.rol);
+        setIsAuthenticated(true);
+      } else {
+        setError('Este usuario no tiene permisos para ingresar.');
+      }
     } catch (err) {
       console.error(err);
       setError('Error de red o del servidor');

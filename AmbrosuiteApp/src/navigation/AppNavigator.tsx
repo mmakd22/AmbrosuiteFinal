@@ -5,7 +5,7 @@ import HomeScreen from '../screens/HomeScreen';
 import LoginScreen from '../screens/LoginScreen';
 import PedidoScreen from '../screens/PedidoScreen';
 import AgregarProductosScreen from '../screens/AgregarProductosScreen';
-import { removeToken } from '../utils/auth';
+import { removeRole, removeToken } from '../utils/auth';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 type Props = {
@@ -51,10 +51,11 @@ const AppNavigator = ({ isAuthenticated, setIsAuthenticated }: Props) => {
         headerRight: () =>
             route.name !== 'Login' && (
               <TouchableOpacity
-                onPress={async () => {
-                  await removeToken();
-                  setIsAuthenticated(false);
-                }}
+              onPress={async () => {
+                await removeToken();
+                await removeRole();
+                setIsAuthenticated(false);
+              }}
                 style={{ marginRight: 12 }}
               >
                 <Icon name="logout" size={24} color="#fff" />

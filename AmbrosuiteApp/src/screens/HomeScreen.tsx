@@ -75,7 +75,7 @@ export default function HomeScreen() {
                     total: 0,
                     estado: 0,
                     mesa_id: mesaId,
-                    usuario_id: 0,
+                    usuario_id: 2,
                 }),
             });
 
