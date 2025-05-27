@@ -19,7 +19,7 @@ export default function App() {
     checkAuth();
   }, []);
 
-  if (isAuthenticated === null) return null; // para evitar parpadeo
+  if (isAuthenticated === null) return null; // Evita renderizar antes de saber el auth
 
   return (
     <NavigationContainer>
