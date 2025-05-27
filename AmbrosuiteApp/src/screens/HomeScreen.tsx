@@ -13,6 +13,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { API_BASE_URL } from '../utils/config';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
+import { getUserId } from '../utils/auth';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
@@ -25,6 +26,7 @@ export default function HomeScreen() {
     const [modalVisible, setModalVisible] = useState(false);
     const [mesasDisponibles, setMesasDisponibles] = useState<Mesa[]>([]);
     const [refreshing, setRefreshing] = useState(false);
+    const usuario_id = getUserId();
 
     const fetchPedidos = async () => {
         try {
@@ -75,7 +77,7 @@ export default function HomeScreen() {
                     total: 0,
                     estado: 0,
                     mesa_id: mesaId,
-                    usuario_id: 2,
+                    usuario_id: usuario_id
                 }),
             });
 

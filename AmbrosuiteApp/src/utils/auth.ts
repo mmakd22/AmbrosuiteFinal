@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const TOKEN_KEY = 'auth_token';
 const ROLE_KEY = 'auth_role';
+const USER_ID_KEY = 'auth_user_id';
 
 export const setToken = async (token: string) => {
   await AsyncStorage.setItem(TOKEN_KEY, token);
@@ -26,4 +27,17 @@ export const getRole = async () => {
 
 export const removeRole = async () => {
   await AsyncStorage.removeItem(ROLE_KEY);
+};
+
+export const setUserId = async (id: number) => {
+  await AsyncStorage.setItem(USER_ID_KEY, id.toString());
+};
+
+export const getUserId = async () => {
+  const id = await AsyncStorage.getItem(USER_ID_KEY);
+  return id ? parseInt(id, 10) : null;
+};
+
+export const removeUserId = async () => {
+  await AsyncStorage.removeItem(USER_ID_KEY);
 };

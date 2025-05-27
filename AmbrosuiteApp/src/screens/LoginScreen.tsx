@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
 import { API_BASE_URL } from '../utils/config';
-import { setToken, setRole } from '../utils/auth';
+import { setToken, setRole, setUserId } from '../utils/auth';
 
 type Props = {
   setIsAuthenticated: (auth: boolean) => void;
@@ -31,6 +31,7 @@ const LoginScreen = ({ setIsAuthenticated }: Props) => {
       if (data.rol_id === 1 || data.rol_id === 4) {
         await setToken(data.token);
         await setRole(data.rol_id);
+        await setUserId(data.id);
         setIsAuthenticated(true);
       } else {
         setError('Este usuario no tiene permisos para ingresar.');
