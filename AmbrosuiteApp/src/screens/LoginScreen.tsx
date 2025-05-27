@@ -28,7 +28,7 @@ const LoginScreen = ({ setIsAuthenticated }: Props) => {
 
       const data = await res.json();
 
-      if (data.rol_id === 0 || data.rol_id === 1) {
+      if (data.rol_id === 1 || data.rol_id === 4) {
         await setToken(data.token);
         await setRole(data.rol_id);
         setIsAuthenticated(true);
