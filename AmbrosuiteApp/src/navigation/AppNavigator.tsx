@@ -14,11 +14,11 @@ type Props = {
 };
 
 export type RootStackParamList = {
-    Home: undefined;
-    Login: undefined;
-    Pedido: { pedidoId: number };
-    AgregarProductos: { pedidoId: number };
-  };
+  Home: undefined;
+  Login: undefined;
+  Pedido: { pedidoId: number };
+  AgregarProductos: { pedidoId: number };
+};
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -49,17 +49,17 @@ const AppNavigator = ({ isAuthenticated, setIsAuthenticated }: Props) => {
           );
         },
         headerRight: () =>
-            route.name !== 'Login' && (
-              <TouchableOpacity
+          route.name !== 'Login' && (
+            <TouchableOpacity
               onPress={async () => {
                 await removeToken();
                 await removeRole();
                 setIsAuthenticated(false);
               }}
-                style={{ marginRight: 12 }}
-              >
-                <Icon name="logout" size={24} color="#fff" />
-              </TouchableOpacity>
+              style={{ marginRight: 12 }}
+            >
+              <Icon name="logout" size={24} color="#fff" />
+            </TouchableOpacity>
           ),
       })}
     >
