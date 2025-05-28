@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Modal,
   Alert,
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useFocusEffect, useNavigation, useRoute } from '@react-navigation/native';
 import { API_BASE_URL } from '../utils/config';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
@@ -38,23 +38,55 @@ export default function PedidoScreen() {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [nuevoEstado, setNuevoEstado] = useState<number | null>(null);
 
-  useEffect(() => {
-    fetchPedido();
-  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const validarYTraerPedido = async () => {
+        try {
+          const resValidacion = await fetch(`${API_BASE_URL}/api/Pedidos/activo/${pedidoId}`);
+          if (!resValidacion.ok) {
+            Alert.alert('Este pedido ya fue cerrado o no está activo.');
+            navigation.navigate('Home');
+            return;
+          }
+
+          const resDetalles = await fetch(`${API_BASE_URL}/api/PedidoDetalles/pedido/${pedidoId}`);
+          const data = await resDetalles.json();
+          setDetalles(data);
+          if (data.length > 0 && data[0].pedido?.estado !== null) {
+            setEstado(data[0].pedido.estado);
+          }
+        } catch (error) {
+          console.error('Error al validar o traer pedido:', error);
+        }
+      };
+
+      validarYTraerPedido();
+    }, [pedidoId])
+  );
+
 
   const fetchPedido = async () => {
     try {
+      const resEstado = await fetch(`${API_BASE_URL}/api/Pedidos/activo/${pedidoId}`);
+      if (resEstado == null) {
+        Alert.alert('Este pedido no está activo o fue cerrado');
+        navigation.navigate('Home');
+        return;
+      }
       const res = await fetch(`${API_BASE_URL}/api/PedidoDetalles/pedido/${pedidoId}`);
       const data = await res.json();
       setDetalles(data);
+
       if (data.length > 0 && data[0].pedido?.estado !== null) {
         setEstado(data[0].pedido.estado);
       }
     } catch (error) {
-      console.error('Error al cargar detalles:', error);
+      console.error('Error al cargar el pedido:', error);
+      Alert.alert('Error al cargar el pedido');
+      navigation.navigate('Home');
     }
   };
-
   const total = detalles.reduce(
     (sum, d) => sum + d.producto.precio * d.cantidad,
     0
@@ -62,22 +94,22 @@ export default function PedidoScreen() {
 
   const handleCambioEstado = async () => {
     if (nuevoEstado === null) return;
-  
+
     try {
       // Paso 1: Obtener datos completos del pedido
       const resGet = await fetch(`${API_BASE_URL}/api/Pedidos/${pedidoId}`);
       const pedidoActual = await resGet.json();
-  
+
       // Paso 2: Modificar estado
       const pedidoActualizado = { ...pedidoActual, estado: nuevoEstado };
-  
+
       // Paso 3: Enviar PUT con el objeto completo
       const resPut = await fetch(`${API_BASE_URL}/api/Pedidos/${pedidoId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(pedidoActualizado),
       });
-  
+
       if (resPut.ok) {
         Alert.alert('Estado actualizado correctamente');
         if (nuevoEstado === 2) {
