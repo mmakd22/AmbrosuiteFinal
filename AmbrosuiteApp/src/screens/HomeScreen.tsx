@@ -13,10 +13,9 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { API_BASE_URL } from '../utils/config';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/AppNavigator';
-import { getUserId } from '../utils/auth';
+import { getUserId, USER_ID } from '../utils/auth';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
-
 type Pedido = { id: number; estado: number };
 type Mesa = { id: number; estado: number };
 
@@ -26,7 +25,9 @@ export default function HomeScreen() {
     const [modalVisible, setModalVisible] = useState(false);
     const [mesasDisponibles, setMesasDisponibles] = useState<Mesa[]>([]);
     const [refreshing, setRefreshing] = useState(false);
-    const usuario_id = getUserId();
+    const [isLoading, setIsLoading] = useState(false);
+    const usuarioId = USER_ID; 
+
 
     const fetchPedidos = async () => {
         try {
@@ -63,10 +64,9 @@ export default function HomeScreen() {
         }
     };
 
-    const [isLoading, setIsLoading] = useState(false);
-
     const crearPedido = async (mesaId: number) => {
-        if (isLoading) return;
+        if (isLoading || usuarioId === null) return;
+
         setIsLoading(true);
 
         try {
@@ -77,7 +77,7 @@ export default function HomeScreen() {
                     total: 0,
                     estado: 0,
                     mesa_id: mesaId,
-                    usuario_id: usuario_id
+                    usuario_id: usuarioId,
                 }),
             });
 
@@ -95,19 +95,19 @@ export default function HomeScreen() {
             console.error('Error general al crear pedido:', error);
             Alert.alert('Error inesperado al crear el pedido.');
         } finally {
-            setIsLoading(false); // Restaurar el estado al final
+            setIsLoading(false);
         }
     };
-
-
-
-
 
     return (
         <View style={styles.container}>
             <Text style={styles.title}>Pedidos Activos</Text>
 
-            <TouchableOpacity style={styles.boton} onPress={abrirModalSeleccionMesa}>
+            <TouchableOpacity
+                style={styles.boton}
+                onPress={abrirModalSeleccionMesa}
+                disabled={usuarioId === null}
+            >
                 <Text style={styles.botonTexto}>Agregar Pedido</Text>
             </TouchableOpacity>
 
@@ -148,8 +148,6 @@ export default function HomeScreen() {
                         <TouchableOpacity onPress={() => setModalVisible(false)}>
                             <Text style={{ marginTop: 10, color: 'red', textAlign: 'center' }}>Cancelar</Text>
                         </TouchableOpacity>
-
-
                     </View>
                 </View>
             </Modal>
