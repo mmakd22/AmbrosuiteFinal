@@ -99,6 +99,7 @@ export default function PedidoScreen() {
       // Paso 1: Obtener datos completos del pedido
       const resGet = await fetch(`${API_BASE_URL}/api/Pedidos/${pedidoId}`);
       const pedidoActual = await resGet.json();
+      const mesaId = pedidoActual.mesa_id;
 
       // Paso 2: Modificar estado
       const pedidoActualizado = { ...pedidoActual, estado: nuevoEstado };
@@ -113,6 +114,18 @@ export default function PedidoScreen() {
       if (resPut.ok) {
         Alert.alert('Estado actualizado correctamente');
         if (nuevoEstado === 2) {
+          // Paso 4: Actualizar estado de la mesa a limpieza
+          if (mesaId != null) {
+            const resPutMesa = await fetch(`${API_BASE_URL}/api/Mesas/${mesaId}`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                estado: 3 // o el estado que desees aplicar a la mesa (ej. disponible)
+              })
+            });
+          }
           navigation.navigate('Home');
         } else {
           setEstado(nuevoEstado);

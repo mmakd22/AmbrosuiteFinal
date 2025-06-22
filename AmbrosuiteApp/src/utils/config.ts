@@ -1,2 +1,2 @@
 //Cambiar url api cada vez que se genere con ngrok
-export const API_BASE_URL = 'https://2812-2803-9800-9005-8210-197e-45c9-e729-e1f7.ngrok-free.app';
+export const API_BASE_URL = 'https://39f4-2800-810-49e-1de7-f5c6-75ea-2ddb-4448.ngrok-free.app';
