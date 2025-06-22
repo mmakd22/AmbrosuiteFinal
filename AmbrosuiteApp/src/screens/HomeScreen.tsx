@@ -66,38 +66,44 @@ export default function HomeScreen() {
 
     const crearPedido = async (mesaId: number) => {
         if (isLoading || usuarioId === null) return;
-
+      
         setIsLoading(true);
-
+      
         try {
-            const response = await fetch(`${API_BASE_URL}/api/Pedidos`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    total: 0,
-                    estado: 0,
-                    mesa_id: mesaId,
-                    usuario_id: usuarioId,
-                }),
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error('Error al crear el pedido:', errorText);
-                Alert.alert('Error', 'No se pudo crear el pedido.');
-                return;
-            }
-
-            await fetchPedidos();
-            setModalVisible(false);
-            Alert.alert('Éxito', 'Pedido creado correctamente.');
+          const response = await fetch(`${API_BASE_URL}/api/Pedidos`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              total: 0,
+              estado: 0,
+              mesa_id: mesaId,
+              usuario_id: usuarioId,
+            }),
+          });
+      
+          if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Error al crear el pedido:', errorText);
+            Alert.alert('Error', 'No se pudo crear el pedido.');
+            return;
+          }
+      
+          const nuevoPedido = await response.json(); // 👈 obtiene el pedido creado
+          const pedidoId = nuevoPedido.id;
+      
+          await fetchPedidos();
+          setModalVisible(false);
+          Alert.alert('Éxito', 'Pedido creado correctamente.');
+      
+          // Navegar a la pantalla del pedido
+          navigation.navigate('Pedido', { pedidoId });
         } catch (error) {
-            console.error('Error general al crear pedido:', error);
-            Alert.alert('Error inesperado al crear el pedido.');
+          console.error('Error general al crear pedido:', error);
+          Alert.alert('Error inesperado al crear el pedido.');
         } finally {
-            setIsLoading(false);
+          setIsLoading(false);
         }
-    };
+      };
 
     return (
         <View style={styles.container}>
