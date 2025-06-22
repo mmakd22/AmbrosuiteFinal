@@ -56,7 +56,7 @@ export default function HomeScreen() {
         try {
             const res = await fetch(`${API_BASE_URL}/api/Mesas`);
             const data = await res.json();
-            const disponibles = data.filter((m: Mesa) => m.estado === 0 || m.estado === 1);
+            const disponibles = data.filter((m: Mesa) => m.estado === 0);
             setMesasDisponibles(disponibles);
             setModalVisible(true);
         } catch (err) {
@@ -88,22 +88,15 @@ export default function HomeScreen() {
             return;
           }
       
-          const nuevoPedido = await response.json();
-      
-          // ✅ Cambiar estado de mesa a ocupada (1)
-          await fetch(`${API_BASE_URL}/api/Mesas/${mesaId}`, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ estado: 1 }),
-          });
+          const nuevoPedido = await response.json(); // 👈 obtiene el pedido creado
+          const pedidoId = nuevoPedido.id;
       
           await fetchPedidos();
           setModalVisible(false);
           Alert.alert('Éxito', 'Pedido creado correctamente.');
       
-          // Si querés navegar directamente al pedido:
-          navigation.navigate('Pedido', { pedidoId: nuevoPedido.id });
-      
+          // Navegar a la pantalla del pedido
+          navigation.navigate('Pedido', { pedidoId });
         } catch (error) {
           console.error('Error general al crear pedido:', error);
           Alert.alert('Error inesperado al crear el pedido.');
@@ -111,7 +104,6 @@ export default function HomeScreen() {
           setIsLoading(false);
         }
       };
-      
 
     return (
         <View style={styles.container}>

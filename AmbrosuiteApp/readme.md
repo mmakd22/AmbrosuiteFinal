@@ -24,7 +24,7 @@ w
 
 Instalar ngrok y crearse cuenta
 
-Hacer login en ngrok creo
+Hacer login en ngrok 
 
 abrir ngrok
 
