@@ -88,15 +88,22 @@ export default function HomeScreen() {
             return;
           }
       
-          const nuevoPedido = await response.json(); // 👈 obtiene el pedido creado
-          const pedidoId = nuevoPedido.id;
+          const nuevoPedido = await response.json();
+      
+          // ✅ Cambiar estado de mesa a ocupada (1)
+          await fetch(`${API_BASE_URL}/api/Mesas/${mesaId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ estado: 1 }),
+          });
       
           await fetchPedidos();
           setModalVisible(false);
           Alert.alert('Éxito', 'Pedido creado correctamente.');
       
-          // Navegar a la pantalla del pedido
-          navigation.navigate('Pedido', { pedidoId });
+          // Si querés navegar directamente al pedido:
+          navigation.navigate('Pedido', { pedidoId: nuevoPedido.id });
+      
         } catch (error) {
           console.error('Error general al crear pedido:', error);
           Alert.alert('Error inesperado al crear el pedido.');
@@ -104,6 +111,7 @@ export default function HomeScreen() {
           setIsLoading(false);
         }
       };
+      
 
     return (
         <View style={styles.container}>
