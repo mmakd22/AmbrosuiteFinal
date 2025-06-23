@@ -79,5 +79,5 @@ const AppNavigator = ({ isAuthenticated, setIsAuthenticated }: Props) => {
     </Stack.Navigator>
   );
 };
-
+// prueba
 export default AppNavigator;
