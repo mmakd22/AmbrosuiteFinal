@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { View, TextInput, Button, StyleSheet, Text } from 'react-native';
 import { API_BASE_URL } from '../utils/config';
-import { setToken, setRole, setUserId } from '../utils/auth';
+import { setToken, setRole, setUserId } from '../utils/auth'; // Se importan funciones para gestionar el token, rol y ID del usuario
+
 
 type Props = {
   setIsAuthenticated: (auth: boolean) => void;
@@ -15,6 +16,7 @@ const LoginScreen = ({ setIsAuthenticated }: Props) => {
   const handleLogin = async () => {
     setError('');
     try {
+      // Realiza una petición POST a la API para autenticar al usuario
       const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -27,7 +29,8 @@ const LoginScreen = ({ setIsAuthenticated }: Props) => {
       }
 
       const data = await res.json();
-
+      
+      // Verifica el rol del usuario para determinar si tiene permisos para acceder
       if (data.rol_id === 1 || data.rol_id === 4) {
         await setToken(data.token);
         await setRole(data.rol_id);
@@ -50,14 +53,14 @@ const LoginScreen = ({ setIsAuthenticated }: Props) => {
         style={styles.input}
         autoCapitalize="none"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={setEmail} // Función para actualizar el estado del email cuando el usuario escribe
       />
       <TextInput
         placeholder="Contraseña"
         secureTextEntry
         style={styles.input}
         value={password}
-        onChangeText={setPassword}
+        onChangeText={setPassword} // Función para actualizar el estado de la contraseña
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <Button title="Iniciar sesión" onPress={handleLogin} />
