@@ -38,3 +38,6 @@ npm i
 
 npx expo start --tunnel
 
+**Generar Apk**
+
+eas build -p android --profile preview
