@@ -38,6 +38,17 @@ npm i
 
 npx expo start --tunnel
 
+**Generar url VPS**
+estar en el root 
+
+ejecutar el siguiente comando "./levantar-api-ngrok.sh"
+
+la url que te da lo pegas en src/utils/config.ts
+
+npm i
+
+npx expo start --tunnel
+
 **Generar Apk**
 
 eas build -p android --profile preview
