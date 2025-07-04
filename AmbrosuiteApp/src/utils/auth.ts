@@ -6,43 +6,81 @@ const USER_ID_KEY = 'auth_user_id';
 
 export var USER_ID = 0;
 
-export const setToken = async (token: string) => {
-  await AsyncStorage.setItem(TOKEN_KEY, token);
-};
+export async function setToken(token: string): Promise<void> {
+  try {
+    await AsyncStorage.setItem(TOKEN_KEY, token);
+  } catch (error) {
+    console.error('[AUTH] setToken error', error);
+  }
+}
 
-export const getToken = async () => {
-  return await AsyncStorage.getItem(TOKEN_KEY);
-};
 
-export const removeToken = async () => {
-  await AsyncStorage.removeItem(TOKEN_KEY);
-};
+export async function getToken(): Promise<string | null> {
+  try {
+    const token = await AsyncStorage.getItem(TOKEN_KEY);
+    console.log('[AUTH] getToken:', token);
+    return token;
+  } catch (error) {
+    console.error('[AUTH] getToken error', error);
+    return null;
+  }
+}
 
-export const setRole = async (role: number) => {
-  await AsyncStorage.setItem(ROLE_KEY, role.toString());
-};
+export async function removeToken(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(TOKEN_KEY);
+  } catch (error) {
+    console.error('[AUTH] removeToken error', error);
+  }
+}
 
-export const getRole = async () => {
-  const stored = await AsyncStorage.getItem(ROLE_KEY);
-  return stored ? parseInt(stored, 10) : null;
-};
+export async function setRole(role: number): Promise<void> {
+  try {
+    await AsyncStorage.setItem(ROLE_KEY, String(role));
+  } catch (error) {
+    console.error('[AUTH] setRole error', error);
+  }
+}
 
-export const removeRole = async () => {
-  await AsyncStorage.removeItem(ROLE_KEY);
-};
+export async function getRole(): Promise<number | null> {
+  try {
+    const role = await AsyncStorage.getItem(ROLE_KEY);
+    console.log('[AUTH] getRole:', role);
+    return role ? Number(role) : null;
+  } catch (error) {
+    console.error('[AUTH] getRole error', error);
+    return null;
+  }
+}
 
-export const setUserId = async (id: number) => {
-  await AsyncStorage.setItem(USER_ID_KEY, id.toString());
-  USER_ID = id;
-  console.log(id);
-};
+export async function removeRole(): Promise<void> {
+  try {
+    await AsyncStorage.removeItem(ROLE_KEY);
+  } catch (error) {
+    console.error('[AUTH] removeRole error', error);
+  }
+}
 
-export const getUserId = async () => {
-  const id = await AsyncStorage.getItem(USER_ID_KEY);
+export async function setUserId(id: number): Promise<void> {
+  try {
+    await AsyncStorage.setItem(USER_ID_KEY, String(id));
+    USER_ID = id;
+  } catch (error) {
+    console.error('[AUTH] setUserId error', error);
+  }
+}
 
-  console.log(id);
-  USER_ID = id ? parseInt(id, 10) : 2;
-};
+export async function getUserId(): Promise<number | null> {
+  try {
+    const id = await AsyncStorage.getItem(USER_ID_KEY);
+    console.log('[AUTH] getUserId:', id);
+    USER_ID = id ? parseInt(id, 10) : 2;
+    return id ? Number(id) : null;
+  } catch (error) {
+    console.error('[AUTH] getUserId error', error);
+    return null;
+  }
+}
 
 export const removeUserId = async () => {
   await AsyncStorage.removeItem(USER_ID_KEY);
