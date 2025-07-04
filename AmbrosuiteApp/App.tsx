@@ -4,6 +4,9 @@ import { NavigationContainer } from '@react-navigation/native';
 import AppNavigator from './src/navigation/AppNavigator';
 import { getToken, getRole } from './src/utils/auth';
 import { LogBox, View, Text } from 'react-native';
+import { enableScreens } from 'react-native-screens';
+
+enableScreens();
 
 LogBox.ignoreLogs(["Tried to enqueue runnable"]);
 
@@ -26,7 +29,7 @@ export default function App() {
         if (token && (rol === 0 || rol === 1)) {
           setIsAuthenticated(true);
         } else {
-          console.log("🧪 No hay token o rol válido. Mostrando Login.");
+          console.log("No hay token o rol válido. Mostrando Login.");
           setIsAuthenticated(false);
         }
       } catch (error) {

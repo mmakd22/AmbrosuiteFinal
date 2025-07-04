@@ -23,12 +23,12 @@ const LoginScreen = ({ setIsAuthenticated, navigation }: Props) => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    console.log('✅ LoginScreen montado correctamente');
+    console.log('LoginScreen montado correctamente');
   }, []);
 
   const handleLogin = async () => {
     setError('');
-    console.log('🔐 Iniciando login con:', email);
+    console.log('Iniciando login con:', email);
     try {
       const res = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
@@ -37,26 +37,26 @@ const LoginScreen = ({ setIsAuthenticated, navigation }: Props) => {
       });
 
       if (!res.ok) {
-        console.log('⚠️ Credenciales inválidas');
+        console.log('Credenciales inválidas');
         setError('Credenciales inválidas');
         return;
       }
 
       const data = await res.json();
-      console.log('✅ Datos recibidos:', data);
+      console.log('Datos recibidos:', data);
 
       if (data.rol_id === 1 || data.rol_id === 4) {
         await setToken(data.token);
         await setRole(data.rol_id);
         await setUserId(data.id);
         setIsAuthenticated(true);
-        console.log('✅ Autenticación exitosa');
+        console.log('Autenticación exitosa');
       } else {
         setError('Este usuario no tiene permisos para ingresar.');
-        console.log('⛔ Rol no autorizado:', data.rol_id);
+        console.log('Rol no autorizado:', data.rol_id);
       }
     } catch (err) {
-      console.error('❌ Error de red o servidor:', err);
+      console.error('Error de red o servidor:', err);
       setError('Error de red o del servidor');
     }
   };
