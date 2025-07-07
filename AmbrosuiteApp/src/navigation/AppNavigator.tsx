@@ -6,6 +6,7 @@ import LoginScreen from '../screens/LoginScreen';
 import PedidoScreen from '../screens/PedidoScreen';
 import AgregarProductosScreen from '../screens/AgregarProductosScreen';
 import { removeToken, removeRole } from '../utils/auth';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 type Props = {
   isAuthenticated: boolean;
@@ -22,15 +23,34 @@ export type RootStackParamList = {
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const AppNavigator = ({ isAuthenticated, setIsAuthenticated }: Props) => {
-  console.log("AppNavigator render - isAuthenticated:", isAuthenticated);
-
   return (
     <Stack.Navigator
       key={isAuthenticated ? 'auth' : 'unauth'}
       screenOptions={({ route }) => ({
         headerStyle: { backgroundColor: '#800020' },
         headerTintColor: '#fff',
-        headerTitleStyle: { fontWeight: 'bold' },
+        headerTitle: () => {
+          const params = route.params as any;
+          if (route.name === 'Pedido' && params?.pedidoId) {
+            return (
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
+                Pedido #{params.pedidoId}
+              </Text>
+            );
+          }
+
+          const titles: Record<string, string> = {
+            Home: 'Pedidos Activos',
+            AgregarProductos: 'Agregar productos',
+            Login: 'Iniciar sesión',
+          };
+
+          return (
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
+              {titles[route.name] || route.name}
+            </Text>
+          );
+        },
         headerRight: () =>
           isAuthenticated && route.name !== 'Login' ? (
             <TouchableOpacity
@@ -41,7 +61,7 @@ const AppNavigator = ({ isAuthenticated, setIsAuthenticated }: Props) => {
               }}
               style={{ marginRight: 12 }}
             >
-              <Text style={{ color: '#fff', fontSize: 16 }}>Log out</Text>
+              <Icon name="logout" size={24} color="#fff" />
             </TouchableOpacity>
           ) : null,
       })}
