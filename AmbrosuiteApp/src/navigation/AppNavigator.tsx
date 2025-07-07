@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Text, TouchableOpacity } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -7,7 +6,6 @@ import LoginScreen from '../screens/LoginScreen';
 import PedidoScreen from '../screens/PedidoScreen';
 import AgregarProductosScreen from '../screens/AgregarProductosScreen';
 import { removeToken, removeRole } from '../utils/auth';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 type Props = {
   isAuthenticated: boolean;
@@ -29,11 +27,24 @@ const AppNavigator = ({ isAuthenticated, setIsAuthenticated }: Props) => {
   return (
     <Stack.Navigator
       key={isAuthenticated ? 'auth' : 'unauth'}
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerStyle: { backgroundColor: '#800020' },
         headerTintColor: '#fff',
         headerTitleStyle: { fontWeight: 'bold' },
-      }}
+        headerRight: () =>
+          isAuthenticated && route.name !== 'Login' ? (
+            <TouchableOpacity
+              onPress={async () => {
+                await removeToken();
+                await removeRole();
+                setIsAuthenticated(false);
+              }}
+              style={{ marginRight: 12 }}
+            >
+              <Text style={{ color: '#fff', fontSize: 16 }}>Log out</Text>
+            </TouchableOpacity>
+          ) : null,
+      })}
     >
       {isAuthenticated ? (
         <>
