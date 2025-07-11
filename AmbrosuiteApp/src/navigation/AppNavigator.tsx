@@ -25,6 +25,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 const AppNavigator = ({ isAuthenticated, setIsAuthenticated }: Props) => {
   return (
     <Stack.Navigator
+      key={isAuthenticated ? 'auth' : 'unauth'}
       screenOptions={({ route }) => ({
         headerStyle: { backgroundColor: '#800020' },
         headerTintColor: '#fff',
@@ -37,11 +38,13 @@ const AppNavigator = ({ isAuthenticated, setIsAuthenticated }: Props) => {
               </Text>
             );
           }
+
           const titles: Record<string, string> = {
             Home: 'Pedidos Activos',
             AgregarProductos: 'Agregar productos',
             Login: 'Iniciar sesión',
           };
+
           return (
             <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
               {titles[route.name] || route.name}
@@ -49,7 +52,7 @@ const AppNavigator = ({ isAuthenticated, setIsAuthenticated }: Props) => {
           );
         },
         headerRight: () =>
-          route.name !== 'Login' && (
+          isAuthenticated && route.name !== 'Login' ? (
             <TouchableOpacity
               onPress={async () => {
                 await removeToken();
@@ -60,7 +63,7 @@ const AppNavigator = ({ isAuthenticated, setIsAuthenticated }: Props) => {
             >
               <Icon name="logout" size={24} color="#fff" />
             </TouchableOpacity>
-          ),
+          ) : null,
       })}
     >
       {isAuthenticated ? (
@@ -79,5 +82,5 @@ const AppNavigator = ({ isAuthenticated, setIsAuthenticated }: Props) => {
     </Stack.Navigator>
   );
 };
-// prueba
+
 export default AppNavigator;
